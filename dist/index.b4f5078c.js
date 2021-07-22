@@ -444,8 +444,6 @@ id) /*: string*/
 },{}],"4ThtM":[function(require,module,exports) {
 "use strict";
 var _leaflet = require('leaflet');
-var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
-var _leafletDefault = _parcelHelpers.interopDefault(_leaflet);
 // prettier-ignore
 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const form = document.querySelector('.form');
@@ -455,11 +453,84 @@ const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
-// const L = window['L'];
-console.log(L);
-console.log(_leafletDefault.default);
+class Workout {
+  date = new Date();
+  id = date.slice(-10);
+  constructor(coords, duration, distance) {
+    (this.coords = coords, this.duration = duration, this.distance = distance);
+  }
+}
+class Running extends Workout {
+  constructor(coords, duration, distance, cadence) {
+    super(coords, duration, distance);
+    this.cadence = cadence;
+    this.pace = this.calcPace();
+  }
+  calcPace() {
+    return this.duration / this.distance;
+  }
+}
+class Cycling extends Workout {
+  constructor(coords, duration, distance, elevation) {
+    super(coords, duration, distance);
+    this.elevation = elevation;
+    this.speed = this.calcSpeed();
+  }
+  calcSpeed() {
+    return this.distance / (this.duration / 60);
+  }
+}
+class App {
+  _map;
+  _mapEvent;
+  constructor() {
+    this._loadPosition();
+    form.addEventListener('submit', this._createWorkout.bind(this));
+    inputType.addEventListener('change', this._toggleElevationField);
+  }
+  _loadPosition() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(this._loadMap.bind(this), function () {
+        alert('unable to detect your location');
+      });
+    }
+  }
+  _loadMap(pos) {
+    const {latitude, longitude} = pos.coords;
+    this._map = _leaflet.map('map').setView([latitude, longitude], 12);
+    _leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(this._map);
+    this._map.on('click', this._showForm.bind(this));
+  }
+  _showForm(e) {
+    this._mapEvent = e;
+    form.classList.remove('hidden');
+    inputDistance.focus();
+  }
+  _createWorkout(e) {
+    e.preventDefault();
+    const {lat, lng} = this._mapEvent.latlng;
+    _leaflet.marker([lat, lng]).addTo(this._map).bindPopup(_leaflet.popup({
+      maxWidth: 300,
+      autoClose: false,
+      closeOnClick: false,
+      className: 'running-popup'
+    })).setPopupContent('Workout').openPopup();
+    if (inputType.value == 'Cycling') {
+      const newWorkout = new Cycling([lat, lng], inputDuration.value, inputDistance.value, inputElevation.value);
+      localStorage.Item('workouts');
+    }
+    inputDistance.value = inputDuration.value = inputElevation.value = inputCadence.value = '';
+  }
+  _toggleElevationField(e) {
+    inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
+    inputCadence.closest('.form__row').classList.toggle('form__row--hidden');
+  }
+}
+const app = new App();
 
-},{"leaflet":"QyATM","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"QyATM":[function(require,module,exports) {
+},{"leaflet":"QyATM"}],"QyATM":[function(require,module,exports) {
 var define;
 /*@preserve
 * Leaflet 1.7.1, a JS library for interactive maps. http://leafletjs.com
@@ -11752,48 +11823,6 @@ var define;
   window.L = exports;
 });
 
-},{}],"5gA8y":[function(require,module,exports) {
-"use strict";
-
-exports.interopDefault = function (a) {
-  return a && a.__esModule ? a : {
-    default: a
-  };
-};
-
-exports.defineInteropFlag = function (a) {
-  Object.defineProperty(a, '__esModule', {
-    value: true
-  });
-};
-
-exports.exportAll = function (source, dest) {
-  Object.keys(source).forEach(function (key) {
-    if (key === 'default' || key === '__esModule') {
-      return;
-    } // Skip duplicate re-exports when they have the same value.
-
-
-    if (key in dest && dest[key] === source[key]) {
-      return;
-    }
-
-    Object.defineProperty(dest, key, {
-      enumerable: true,
-      get: function () {
-        return source[key];
-      }
-    });
-  });
-  return dest;
-};
-
-exports.export = function (dest, destName, get) {
-  Object.defineProperty(dest, destName, {
-    enumerable: true,
-    get: get
-  });
-};
 },{}]},["63iPG","4ThtM"], "4ThtM", "parcelRequire6008")
 
 //# sourceMappingURL=index.b4f5078c.js.map
