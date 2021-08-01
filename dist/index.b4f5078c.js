@@ -453,6 +453,7 @@ const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
+let workoutButtons;
 class Workout {
   date = new Date();
   id = (Date.now() + '').slice(-10);
@@ -490,10 +491,23 @@ class Cycling extends Workout {
 class App {
   _map;
   _mapEvent;
+  _workouts = [];
   constructor() {
     this._loadPosition();
     form.addEventListener('submit', this._createWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevationField);
+  }
+  _setData(workout) {
+    this._workouts.push(workout);
+    localStorage.setItem('workouts', JSON.stringify(this._workouts));
+  }
+  _getData() {
+    const data = JSON.parse(localStorage.getItem('workouts'));
+    if (!data) return;
+    this._workouts = data;
+    this._workouts.forEach(workout => this._renderWorkout(workout));
+    this._workouts.forEach(workout => this._setWorkoutMarker(workout));
+    this._workouts.forEach(workout => console.log(workout));
   }
   _loadPosition() {
     if (navigator.geolocation) {
@@ -509,6 +523,7 @@ class App {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(this._map);
     this._map.on('click', this._showForm.bind(this));
+    this._getData();
   }
   _showForm(e) {
     this._mapEvent = e;
@@ -548,10 +563,22 @@ class App {
       workout = new Cycling([lat, lng], duration, distance, elevation);
     }
     this._setWorkoutMarker(workout);
+    this._setData(workout);
     this._renderWorkout(workout);
     this._hideForm();
     console.log(workout);
     inputDistance.value = inputDuration.value = inputElevation.value = inputCadence.value = '';
+  }
+  _deleteWorkout(e) {
+    const rerenderWorkouts = () => {
+      workoutDivs.forEach(div => div.remove());
+      this._getData();
+    };
+    const id = e.target.dataset.id;
+    const workoutDivs = document.querySelectorAll('.workout');
+    this._workouts = this._workouts.filter(workout => workout.id != id);
+    localStorage.setItem('workouts', JSON.stringify(this._workouts));
+    rerenderWorkouts();
   }
   _toggleElevationField(e) {
     inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
@@ -559,14 +586,16 @@ class App {
   }
   _setWorkoutMarker(workout) {
     const [lat, lng] = workout.coords;
-    _leaflet.marker([lat, lng]).addTo(this._map).bindPopup(_leaflet.popup({
-      maxWidth: 300,
-      autoClose: false,
-      closeOnClick: false,
-      className: `${workout.type}-popup`
-    })).setPopupContent(`${workout.type}`).openPopup();
+    if (this._map) {
+      _leaflet.marker([lat, lng]).addTo(this._map).bindPopup(_leaflet.popup({
+        maxWidth: 300,
+        autoClose: false,
+        closeOnClick: false,
+        className: `${workout.type}-popup`
+      })).setPopupContent(`${workout.type}`).openPopup();
+    }
   }
-  _renderWorkout(workout) {
+  _renderWorkout(workout, isDeleted = false) {
     let content = ` <li class="workout workout--${workout.type}" data-id="${workout.id}">
     <h2 class="workout__title">${workout.description}</h2>
     <div class="workout__details">
@@ -578,7 +607,8 @@ class App {
       <span class="workout__icon">⏱</span>
       <span class="workout__value">${workout.duration}</span>
       <span class="workout__unit">min</span>
-    </div>`;
+    </div>
+    <button data-id="${workout.id}" class="workout__button">X</button>`;
     if (workout.type === 'running') {
       content += `<div class="workout__details">
       <span class="workout__icon">⚡️</span>
@@ -606,6 +636,8 @@ class App {
         </li>`;
     }
     form.insertAdjacentHTML('afterend', content);
+    const button = document.querySelector(`button[data-id="${workout.id}"]`);
+    button.addEventListener('click', this._deleteWorkout.bind(this));
   }
 }
 const app = new App();
