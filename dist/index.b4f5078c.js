@@ -453,6 +453,7 @@ const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
+const workoutsInfo = document.querySelector('.workouts__info');
 class Workout {
   date = new Date();
   id = (Date.now() + '').slice(-10);
@@ -494,6 +495,7 @@ class App {
   _markers = [];
   constructor() {
     this._loadPosition();
+    this._showInfo;
     form.addEventListener('submit', this._createWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevationField);
   }
@@ -526,6 +528,7 @@ class App {
     this._getData();
   }
   _showForm(e) {
+    this._hideInfo();
     this._mapEvent = e;
     form.classList.remove('hidden');
     inputDistance.focus();
@@ -534,6 +537,13 @@ class App {
     form.style.display = 'none';
     form.classList.add('hidden');
     setTimeout(() => form.style.display = 'grid', 500);
+  }
+  _showInfo() {
+    if (this._workouts.length == 0) workoutsInfo.classList.remove('workouts__info--hidden');
+  }
+  _hideInfo() {
+    if (workoutsInfo.classList.contains('workouts__info--hidden')) return;
+    workoutsInfo.classList.add('workouts__info--hidden');
   }
   _createWorkout(e) {
     e.preventDefault();
@@ -570,12 +580,12 @@ class App {
     inputDistance.value = inputDuration.value = inputElevation.value = inputCadence.value = '';
   }
   _deleteWorkout(workout) {
+    const id = workout.id;
+    const workoutDivs = document.querySelectorAll('.workout');
     const rerenderWorkouts = () => {
       workoutDivs.forEach(div => div.remove());
       this._getData();
     };
-    const id = workout.id;
-    const workoutDivs = document.querySelectorAll('.workout');
     const removeMarker = () => {
       this._markers.forEach(marker => {
         if (marker._latlng.lat == workout.coords[0] && marker._latlng.lng == workout.coords[1]) {
@@ -587,6 +597,7 @@ class App {
     localStorage.setItem('workouts', JSON.stringify(this._workouts));
     rerenderWorkouts();
     removeMarker();
+    this._showInfo();
   }
   _toggleElevationField(e) {
     inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
@@ -600,7 +611,7 @@ class App {
       autoClose: false,
       closeOnClick: false,
       className: `${workout.type}-popup`
-    })).setPopupContent(`${workout.type}`).openPopup();
+    })).setPopupContent(`${workout.type === 'running' ? '🏃‍♂️' : '🚴‍♀️'} ${workout.description}`).openPopup();
   }
   _renderWorkout(workout) {
     let content = ` <li class="workout workout--${workout.type}" data-id="${workout.id}">

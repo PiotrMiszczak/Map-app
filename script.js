@@ -11,6 +11,7 @@ const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
+const workoutsInfo = document.querySelector('.workouts__info');
 
 class Workout {
   date = new Date();
@@ -62,7 +63,7 @@ class App {
 
   constructor() {
     this._loadPosition();
-
+    this._showInfo;
     form.addEventListener('submit', this._createWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevationField);
   }
@@ -105,6 +106,7 @@ class App {
   }
 
   _showForm(e) {
+    this._hideInfo()
     this._mapEvent = e;
     form.classList.remove('hidden');
     inputDistance.focus();
@@ -114,6 +116,14 @@ class App {
     form.classList.add('hidden');
     setTimeout(() => (form.style.display = 'grid'), 500);
   }
+  _showInfo(){
+    if(this._workouts.length==0)
+      workoutsInfo.classList.remove('workouts__info--hidden')
+  }
+  _hideInfo(){
+    if (workoutsInfo.classList.contains('workouts__info--hidden')) return
+    workoutsInfo.classList.add('workouts__info--hidden')
+}
 
   _createWorkout(e) {
     e.preventDefault();
@@ -164,12 +174,14 @@ class App {
   }
 
   _deleteWorkout(workout) {
+    
+    const id = workout.id;
+    const workoutDivs = document.querySelectorAll('.workout');
     const rerenderWorkouts = () => {
       workoutDivs.forEach(div => div.remove());
       this._getData();
     };
-    const id = workout.id;
-    const workoutDivs = document.querySelectorAll('.workout');
+    
 
     const removeMarker = () => {
       this._markers.forEach(marker => {
@@ -186,6 +198,7 @@ class App {
     localStorage.setItem('workouts', JSON.stringify(this._workouts));
     rerenderWorkouts();
     removeMarker();
+    this._showInfo();
   }
 
   _toggleElevationField(e) {
@@ -206,7 +219,7 @@ class App {
           className: `${workout.type}-popup`,
         })
       )
-      .setPopupContent(`${workout.type}`)
+      .setPopupContent(`${workout.type === 'running' ? '🏃‍♂️' : '🚴‍♀️'} ${workout.description}`)
       .openPopup();
   }
   _renderWorkout(workout) {

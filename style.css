@@ -42,6 +42,7 @@ a:visited {
 
 /* SIDEBAR */
 .sidebar {
+  flex-shrink: 1;
   flex-basis: 50rem;
   background-color: var(--color-dark--1);
   padding: 3rem 5rem 4rem 5rem;
@@ -109,6 +110,13 @@ a:visited {
   top: 20px;
   right: 20px;
   transition: all .1s ease-in;
+}
+.workouts__info{
+  font-size: 1.8rem;
+  
+}
+.workouts__info--hidden{
+  display: none;
 }
 .workout__button:hover{
   transition: all .1s ease-in;
