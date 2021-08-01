@@ -11,7 +11,7 @@ const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
-let workoutButtons;
+
 class Workout {
   date = new Date();
   id = (Date.now() + '').slice(-10);
@@ -58,6 +58,7 @@ class App {
   _map;
   _mapEvent;
   _workouts = [];
+  _markers = [];
 
   constructor() {
     this._loadPosition();
@@ -162,16 +163,29 @@ class App {
         '';
   }
 
-  _deleteWorkout(e) {
+  _deleteWorkout(workout) {
     const rerenderWorkouts = () => {
       workoutDivs.forEach(div => div.remove());
       this._getData();
     };
-    const id = e.target.dataset.id;
+    const id = workout.id;
     const workoutDivs = document.querySelectorAll('.workout');
+
+    const removeMarker = () => {
+      this._markers.forEach(marker => {
+        if (
+          marker._latlng.lat == workout.coords[0] &&
+          marker._latlng.lng == workout.coords[1]
+        ) {
+          this._map.removeLayer(marker);
+        }
+      });
+    };
+    
     this._workouts = this._workouts.filter(workout => workout.id != id);
     localStorage.setItem('workouts', JSON.stringify(this._workouts));
     rerenderWorkouts();
+    removeMarker();
   }
 
   _toggleElevationField(e) {
@@ -179,23 +193,23 @@ class App {
     inputCadence.closest('.form__row').classList.toggle('form__row--hidden');
   }
   _setWorkoutMarker(workout) {
-    const [lat, lng] = workout.coords;
-    if (this._map) {
-      L.marker([lat, lng])
-        .addTo(this._map)
-        .bindPopup(
-          L.popup({
-            maxWidth: 300,
-            autoClose: false,
-            closeOnClick: false,
-            className: `${workout.type}-popup`,
-          })
-        )
-        .setPopupContent(`${workout.type}`)
-        .openPopup();
-    }
+    const marker = L.marker(workout.coords);
+    this._markers.push(marker);
+
+    marker
+      .addTo(this._map)
+      .bindPopup(
+        L.popup({
+          maxWidth: 300,
+          autoClose: false,
+          closeOnClick: false,
+          className: `${workout.type}-popup`,
+        })
+      )
+      .setPopupContent(`${workout.type}`)
+      .openPopup();
   }
-  _renderWorkout(workout, isDeleted = false) {
+  _renderWorkout(workout) {
     let content = ` <li class="workout workout--${workout.type}" data-id="${
       workout.id
     }">
@@ -242,7 +256,7 @@ class App {
     }
     form.insertAdjacentHTML('afterend', content);
     const button = document.querySelector(`button[data-id="${workout.id}"]`);
-    button.addEventListener('click', this._deleteWorkout.bind(this));
+    button.addEventListener('click', this._deleteWorkout.bind(this, workout));
   }
 }
 
