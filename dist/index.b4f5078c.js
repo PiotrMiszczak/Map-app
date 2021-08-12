@@ -453,7 +453,9 @@ const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
-const workoutsInfo = document.querySelector('.workouts__info');
+const sidebar = document.querySelector('.sidebar');
+const sidebarExpand = document.querySelector('.sidebar--expand');
+// CLASS DECLARATIONS
 class Workout {
   date = new Date();
   id = (Date.now() + '').slice(-10);
@@ -494,11 +496,13 @@ class App {
   _workouts = [];
   _markers = [];
   constructor() {
-    this._loadPosition();
-    this._showInfo;
     form.addEventListener('submit', this._createWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevationField);
+    sidebarExpand.addEventListener('click', this._toggleSidebarView.bind(this));
+    containerWorkouts.addEventListener('click', this._moveTopopup.bind(this));
+    this._loadPosition();
   }
+  /*///////////////// BUSINES LOGIC*/
   _setData(workout) {
     this._workouts.push(workout);
     localStorage.setItem('workouts', JSON.stringify(this._workouts));
@@ -509,7 +513,6 @@ class App {
     this._workouts = data;
     this._workouts.forEach(workout => this._renderWorkout(workout));
     this._workouts.forEach(workout => this._setWorkoutMarker(workout));
-    this._workouts.forEach(workout => console.log(workout));
   }
   _loadPosition() {
     if (navigator.geolocation) {
@@ -526,24 +529,7 @@ class App {
     }).addTo(this._map);
     this._map.on('click', this._showForm.bind(this));
     this._getData();
-  }
-  _showForm(e) {
-    this._hideInfo();
-    this._mapEvent = e;
-    form.classList.remove('hidden');
-    inputDistance.focus();
-  }
-  _hideForm(e) {
-    form.style.display = 'none';
-    form.classList.add('hidden');
-    setTimeout(() => form.style.display = 'grid', 500);
-  }
-  _showInfo() {
-    if (this._workouts.length == 0) workoutsInfo.classList.remove('workouts__info--hidden');
-  }
-  _hideInfo() {
-    if (workoutsInfo.classList.contains('workouts__info--hidden')) return;
-    workoutsInfo.classList.add('workouts__info--hidden');
+    this._switchExpandButton();
   }
   _createWorkout(e) {
     e.preventDefault();
@@ -553,6 +539,9 @@ class App {
     };
     const isPositive = (...props) => {
       return props.every(prop => prop > 0);
+    };
+    const clearForm = () => {
+      inputDistance.value = inputDuration.value = inputElevation.value = inputCadence.value = '';
     };
     const {lat, lng} = this._mapEvent.latlng;
     const type = inputType.value;
@@ -576,8 +565,9 @@ class App {
     this._setData(workout);
     this._renderWorkout(workout);
     this._hideForm();
-    console.log(workout);
-    inputDistance.value = inputDuration.value = inputElevation.value = inputCadence.value = '';
+    this._switchExpandButton();
+    clearForm();
+    sidebar.classList.contains('sidebar--expanded') && this._toggleSidebarView();
   }
   _deleteWorkout(workout) {
     const id = workout.id;
@@ -597,11 +587,7 @@ class App {
     localStorage.setItem('workouts', JSON.stringify(this._workouts));
     rerenderWorkouts();
     removeMarker();
-    this._showInfo();
-  }
-  _toggleElevationField(e) {
-    inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
-    inputCadence.closest('.form__row').classList.toggle('form__row--hidden');
+    this._switchExpandButton();
   }
   _setWorkoutMarker(workout) {
     const marker = _leaflet.marker(workout.coords);
@@ -656,6 +642,50 @@ class App {
     form.insertAdjacentHTML('afterend', content);
     const button = document.querySelector(`button[data-id="${workout.id}"]`);
     button.addEventListener('click', this._deleteWorkout.bind(this, workout));
+  }
+  /*///////////////// UI LOGIC*/
+  _showForm(e) {
+    this._mapEvent = e;
+    form.classList.remove('hidden');
+    inputDistance.focus();
+    this._switchExpandButton();
+  }
+  _hideForm(e) {
+    form.style.display = 'none';
+    form.classList.add('hidden');
+    setTimeout(() => form.style.display = 'grid', 500);
+  }
+  _toggleElevationField(e) {
+    inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
+    inputCadence.closest('.form__row').classList.toggle('form__row--hidden');
+  }
+  _toggleSidebarView(action = 'none') {
+    sidebar.classList.toggle('sidebar--expanded');
+    sidebar.classList.toggle('sidebar');
+    sidebarExpand.innerHTML = sidebar.classList.contains('sidebar--expanded') ? 'Collapse	&#8593' : 'Expand &#8595';
+    if (action == 'close') {
+      sidebar.classList.remove('sidebar--expanded');
+      sidebar.classList.add('sidebar');
+      sidebarExpand.innerHTML = 'Expand &#8595';
+    }
+  }
+  _switchExpandButton() {
+    if (this._workouts.length == 0 || this._workouts.length == 1 && form.classList.contains('hidden')) {
+      sidebarExpand.disabled = true;
+      sidebarExpand.classList.add('sidebar--expand-disabled');
+      sidebar.classList.remove('sidebar--expanded');
+      sidebar.classList.add('sidebar');
+      sidebarExpand.innerHTML = 'Expand &#8595';
+    } else {
+      sidebarExpand.disabled = false;
+      sidebarExpand.classList.remove('sidebar--expand-disabled');
+    }
+  }
+  _moveTopopup(e) {
+    const workoutElement = e.target.closest('.workout');
+    const workout = this._workouts.find(item => item.id === workoutElement.dataset.id);
+    this._toggleSidebarView('close');
+    this._map.setView(workout.coords, 14);
   }
 }
 const app = new App();
