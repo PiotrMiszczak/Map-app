@@ -99,7 +99,7 @@ class App {
   }
   _loadMap(pos) {
     const { latitude, longitude } = pos.coords;
-    this._map = L.map('map').setView([latitude, longitude], 12);
+    this._map = L.map('map',{zoomControl:false}).setView([latitude, longitude], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
