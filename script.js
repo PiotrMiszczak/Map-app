@@ -21,7 +21,7 @@ class Workout {
   constructor(coords, duration, distance) {
     (this.coords = coords),
       (this.duration = duration),
-      (this.distance = distance)
+      (this.distance = distance);
   }
   setDescription() {
     return `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${
@@ -71,7 +71,7 @@ class App {
     this._loadPosition();
   }
 
-    /////////////////// BUSINES LOGIC
+  /////////////////// BUSINES LOGIC
 
   _setData(workout) {
     this._workouts.push(workout);
